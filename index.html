@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>MLT Log Table</title>
+<meta name="color-scheme" content="light">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light only;--ink:#1a1a17;--paper:#e8e4d8;--paper2:#f0ede3;--cell:#fffdf6;--line:#c4bfae;--hz:#f2c200;--hzd:#d9a900;--steel:#3a6ea5;--rust:#b0562c;--green:#4a7a3a;--red:#a33025;--mut:#5a574d}
+*{box-sizing:border-box}
+html{background:#e8e4d8 !important}
+body{margin:0;background-color:#e8e4d8 !important;color:#1a1a17 !important;font:14px/1.4 'Archivo',Arial,Helvetica,sans-serif;background-image:linear-gradient(rgba(196,191,174,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(196,191,174,.35) 1px,transparent 1px);background-size:26px 26px}
+.mono{font-family:'Space Mono','Courier New',monospace}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:#1a1a17 !important;color:#f0ede3 !important;padding:10px 16px 8px;border-bottom:3px solid #f2c200}
+.top .row1{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
+h1{margin:0;font-weight:900;font-size:22px;letter-spacing:.02em;color:#f2c200;text-transform:uppercase;line-height:1}
+.pid{font:700 12px 'Space Mono',monospace;color:#e8e4d8}
+.now{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px}
+.k{background:#2a2a25;padding:5px 7px;min-width:0}
+.k b{display:block;font:700 9px 'Space Mono',monospace;color:#f2c200;letter-spacing:.05em;text-transform:uppercase}
+.k span{display:block;font:700 15px 'Space Mono',monospace;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.k span.late{color:#ff8a70}
+.k small{display:block;font:400 10px 'Space Mono',monospace;color:#cfcab9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tape{height:8px;background:repeating-linear-gradient(-45deg,#f2c200 0,#f2c200 10px,#1a1a17 10px,#1a1a17 20px)}
+.bar{display:flex;gap:8px;padding:8px 16px;flex-wrap:wrap}
+.btn{background:#1a1a17;color:#f2c200;border:2px solid #1a1a17;font:700 11px 'Space Mono',monospace;padding:8px 10px;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;border-radius:0}
+.btn.hz{background:#f2c200;color:#1a1a17}
+.btn.ghost{background:#f0ede3;color:#1a1a17}
+.btn.sm{padding:3px 6px;font-size:10px}
+.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #3a6ea5;outline-offset:1px}
+.wrap{padding:0 16px 30px}
+.panel{background:#f0ede3 !important;border:2px solid #1a1a17;box-shadow:4px 4px 0 #1a1a17;padding:12px;margin:8px 0 14px}
+.panel h2{margin:0 0 8px;font-weight:800;font-size:14px;text-transform:uppercase;letter-spacing:.03em}
+.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+label{display:block;font:700 10px 'Space Mono',monospace;text-transform:uppercase;color:#4a4740;margin-bottom:2px}
+.panel input,.panel select,textarea{width:100%;font:400 15px 'Space Mono',monospace;padding:7px 8px;border:2px solid #1a1a17;background:#fffdf6 !important;color:#1a1a17 !important;border-radius:0}
+.note{font-size:12px;color:#5a574d;margin:6px 0 0}
+.warn{background:#f2c200;border:2px solid #1a1a17;padding:8px 10px;font-size:13px;margin-top:8px}
+.tw{overflow:auto;max-height:calc(100vh - 150px);border:2px solid #1a1a17;background:#fffdf6;box-shadow:4px 4px 0 #1a1a17}
+table{border-collapse:separate;border-spacing:0;font:400 13px 'Space Mono',monospace;font-variant-numeric:tabular-nums;min-width:100%}
+th{position:sticky;top:0;z-index:5;background:#1a1a17;color:#f2c200;font:700 10px 'Space Mono',monospace;text-transform:uppercase;padding:6px 4px;text-align:center;white-space:nowrap;border-right:1px solid #444}
+td{border-bottom:1px solid #d8d3c3;border-right:1px solid #e3dfd2;padding:0;height:34px;white-space:nowrap;text-align:right;background:#fffdf6}
+td.tm{position:sticky;left:0;z-index:3;text-align:left;padding:0 6px;font-weight:700;background:#f0ede3;border-right:2px solid #1a1a17;min-width:92px}
+th.tm{left:0;z-index:6;border-right:2px solid #1a1a17}
+td.tm small{display:block;font-weight:400;font-size:9px;color:#5a574d;line-height:1}
+td.c{padding:0 6px;color:#1a1a17}
+td.c.set{font-weight:700}
+td.mute{color:#8a8578;padding:0 6px}
+td input{width:66px;height:33px;border:0;background:transparent;font:400 14px 'Space Mono',monospace;text-align:right;padding:0 5px;color:#1a1a17;border-radius:0}
+td input.w{width:120px;text-align:left;font-size:12px}
+td input::placeholder{color:#b9b4a4}
+td input:focus{background:#fff3b8;outline:2px solid #3a6ea5;outline-offset:-2px}
+tr.sh td{background:#1a1a17 !important;color:#f0ede3;text-align:left;padding:6px 0;height:auto}
+.shi{position:sticky;left:0;display:inline-block;padding:0 8px;white-space:normal;max-width:calc(100vw - 40px)}
+tr.sh td .sl{font:900 13px 'Archivo',Arial,sans-serif;text-transform:uppercase;color:#f2c200}
+tr.sh td .si{font:400 11px 'Space Mono',monospace;color:#e8e4d8;margin-left:6px}
+tr.sh td input{width:auto;height:26px;background:#fffdf6;color:#1a1a17;border:1px solid #f2c200;font-size:12px;text-align:left;padding:0 4px}
+tr.sh td .ov{color:#f2c200;font:700 10px 'Space Mono',monospace;margin-left:4px}
+tr.done td{background:#eef3e8}
+tr.done td.tm{background:#dce8d2}
+tr.over td{background:#fbe3d6}
+tr.over td.tm{background:#f5c7b0}
+tr.next td{background:#fff3b8}
+tr.next td.tm{background:#f2c200}
+tr.next td.tm::after{content:' \25C0';color:#1a1a17}
+.neg{color:#a33025}
+.res{display:grid;grid-template-columns:1fr auto auto auto;gap:4px 10px;font:400 13px 'Space Mono',monospace;align-items:center}
+.res .h{font-weight:700;font-size:10px;text-transform:uppercase;color:#4a4740}
+.chip{display:inline-block;font:700 10px 'Space Mono',monospace;padding:2px 6px;border:2px solid currentColor;text-transform:uppercase}
+.ok{color:#4a7a3a;background:#e3eddc}.bad{color:#a33025;background:#f5dfdb}.wait{color:#8a6d00;background:#fbefbf}.na{color:#6d6a5e;background:#e6e2d6}
+[hidden]{display:none !important}
+#modal{position:fixed;inset:0;z-index:50;background:rgba(26,26,23,.6);display:flex;align-items:center;justify-content:center;padding:16px}
+#modal .box{background:#f0ede3;border:3px solid #1a1a17;box-shadow:6px 6px 0 #f2c200;max-width:520px;width:100%;padding:14px;max-height:90vh;overflow:auto}
+#modal h3{margin:0 0 6px;font-weight:900;text-transform:uppercase;font-size:15px}
+#mTxt{height:170px;font-size:11px}
+.mb{display:flex;gap:8px;margin-top:10px}.mb .btn{flex:1}
+@media (max-width:520px){.now{grid-template-columns:repeat(2,minmax(0,1fr))}h1{font-size:18px}}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto !important}}
+</style>
+
+</head>
+<body>
+<div class="top">
+ <div class="row1"><h1>MLT Log</h1><span class="pid" id="pid"></span></div>
+ <div class="now">
+  <div class="k"><b>Masa kini</b><span id="kNow">-</span><small id="kDay">-</small></div>
+  <div class="k"><b>Bacaan seterusnya</b><span id="kNext">-</span><small id="kNextL">-</small></div>
+  <div class="k"><b>Beban semasa</b><span id="kLoad">-</span><small id="kPsi">-</small></div>
+  <div class="k"><b>Mendap terkini</b><span id="kSet">-</span><small id="kSetL">-</small></div>
+ </div>
+</div>
+<div class="tape"></div>
+<div class="bar">
+ <button class="btn hz" type="button" data-act="goNext">Pergi ke row aktif</button>
+ <button class="btn ghost" type="button" data-act="toggleSet">Tetapan</button>
+ <button class="btn ghost" type="button" data-act="csv">Salin CSV</button>
+ <button class="btn ghost" type="button" data-act="backup">Backup / Import</button>
+</div>
+
+<div class="wrap">
+ <div class="panel" id="setPanel" hidden>
+  <h2>Tetapan ujian</h2>
+  <div class="g">
+   <div><label for="cPile">ID cerucuk</label><input id="cPile" data-c="pile" type="text"></div>
+   <div><label for="cWl">Working load (t)</label><input id="cWl" data-c="wl" type="number" inputmode="decimal" step="any"></div>
+   <div><label for="cArea">Luas jack (in&sup2;)</label><input id="cArea" data-c="area" type="number" inputmode="decimal" step="any"></div>
+   <div><label for="cDia">Diameter (mm)</label><input id="cDia" data-c="dia" type="number" inputmode="decimal" step="any"></div>
+   <div><label for="cStart">Masa mula ujian</label><input id="cStart" data-c="start" type="datetime-local"></div>
+   <div><label for="cFac">Cara tulis dial</label><select id="cFac" data-c="fac"><option value="1">Ada titik (13.95)</option><option value="0.01">Tanpa titik (1395)</option></select></div>
+   <div><label for="cDir">Arah dial</label><select id="cDir" data-c="dir"><option value="1">Naik bila mendap</option><option value="-1">Turun bila mendap</option></select></div>
+  </div>
+  <p class="note">Jadual ikut MLT Record (Appendix D). Tukar masa mula sebenar setiap peringkat di baris hitam dalam jadual; peringkat selepasnya akan ikut sendiri.</p>
+  <div class="warn">Data disimpan dalam browser peranti ini sahaja. Buat <b>Backup</b> setiap tukar peringkat dan hantar ke WhatsApp.</div>
+ </div>
+
+ <div class="tw" id="tw"><table id="tbl"></table></div>
+
+ <div class="panel" style="margin-top:14px">
+  <h2>Semakan kriteria (MOS 1.7)</h2>
+  <div class="res" id="res"></div>
+  <p class="note">Keputusan muktamad ikut tafsiran S.O.</p>
+ </div>
+</div>
+
+<div id="modal" hidden><div class="box" role="dialog" aria-modal="true" aria-labelledby="mT"><h3 id="mT"></h3><p class="note" id="mMsg"></p><textarea id="mTxt"></textarea><div class="mb"><button class="btn ghost" type="button" id="mX">Tutup</button><button class="btn" type="button" id="mImp" hidden>Import</button><button class="btn hz" type="button" id="mCopy">Salin</button></div></div></div>
+
+<script>
+if('serviceWorker' in navigator&&location.protocol==='https:'){navigator.serviceWorker.register('sw.js').catch(function(){});}
+(function(){
+'use strict';
+var KEY='mlt_table_v1';
+var ST={cfg:{pile:'A3 Bridge 1',wl:100,area:113.15,dia:300,start:null,fac:'1',dir:'1'},ss:{},rows:{}};
+var STG=[],ROWS=[],NEXTKEY=null;
+function $(i){return document.getElementById(i);}
+function num(v){if(v===''||v==null)return null;var n=parseFloat(String(v).replace(',','.'));return isNaN(n)?null:n;}
+function f(n,d){return (n==null||isNaN(n))?'':Number(n).toFixed(d==null?2:d);}
+function pad(n){return (n<10?'0':'')+n;}
+function hm(ms){var d=new Date(ms);return pad(d.getHours())+':'+pad(d.getMinutes());}
+function dm(ms){var d=new Date(ms);return pad(d.getDate())+'/'+pad(d.getMonth()+1);}
+function toLocal(ms){var d=new Date(ms);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());}
+function fromLocal(v){var m=String(v).match(/(\d+)-(\d+)-(\d+)T(\d+):(\d+)/);return m?new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5]).getTime():null;}
+function dur(ms){var neg=ms<0;ms=Math.abs(ms);var s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (neg?'-':'')+(h?h+':'+pad(m):m)+':'+pad(x);}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(ST));}catch(e){}}
+function load(){try{var s=localStorage.getItem(KEY);if(s){var o=JSON.parse(s);if(o&&o.cfg){ST=o;if(!ST.ss)ST.ss={};if(!ST.rows)ST.rows={};}}}catch(e){}
+ if(!ST.cfg.start){var d=new Date();d.setSeconds(0,0);ST.cfg.start=d.getTime();}}
+
+/* ---------- jadual ikut Appendix D ---------- */
+function buildStages(){STG=[];var o30=[0,2,8,15,30],o60=[0,2,8,15,30,45,60];
+ function add(c,p,t,o){STG.push({c:c,p:p,t:t,o:o,d:o[o.length-1]});}
+ add(0,0,'Z',[0]);
+ [25,50,75].forEach(function(p){add(1,p,'L',o30);});
+ add(1,100,'L',[0,2,8,15,30,45,60,75,90,105,120,180,240,300,315,330,345,360]);
+ add(1,50,'U',o30);add(1,0,'U',o60);
+ [25,50,75,100,125,150,175].forEach(function(p){add(2,p,'L',o30);});
+ var a=[0,2,8,15,30,45,60,75,90,105,120];for(var m=180;m<=1440;m+=60)a.push(m);add(2,200,'L',a);
+ [150,100,50].forEach(function(p){add(2,p,'U',o30);});add(2,0,'U',o60);}
+function stStart(i){var s=ST.cfg.start;for(var k=0;k<=i;k++){if(k>0)s=s+STG[k-1].d*60000;if(ST.ss[k]!=null)s=ST.ss[k];}return s;}
+function buildRows(){ROWS=[];STG.forEach(function(s,i){var st=stStart(i);s.st=st;s.over=ST.ss[i]!=null;
+ s.o.forEach(function(m){ROWS.push({k:i+'-'+m,i:i,m:m,t:st+m*60000});});});}
+function stName(s){if(s.t==='Z')return 'Bacaan awal (sifar)';return 'C'+s.c+' &middot; '+(s.t==='L'?'Load':'Unload')+' '+s.p+'%';}
+function cfgN(k){return num(ST.cfg[k]);}
+function tons(s){return (cfgN('wl')||0)*s.p/100;}
+function psiT(t){var a=cfgN('area');return a?Math.round(t*2204.62/a):null;}
+function psiToT(p){var a=cfgN('area');return (a&&p!=null)?p*a/2204.62:null;}
+
+/* ---------- kiraan ---------- */
+function R(k){return ST.rows[k]||null;}
+function has(r){return !!(r&&r.l&&r.l.some(function(x){return x!=null;}));}
+function avg(r){if(!has(r))return null;var fac=num(ST.cfg.fac)||1,s=0,n=0;r.l.forEach(function(x){if(x!=null){s+=x*fac;n++;}});return n?s/n:null;}
+function zero(){var z=R('0-0');return has(z)?z:null;}
+function settle(r){var z=zero();if(!z||!has(r))return null;var fac=num(ST.cfg.fac)||1,dir=num(ST.cfg.dir)||1,s=0,n=0;
+ for(var q=0;q<4;q++){if(r.l[q]!=null&&z.l[q]!=null){s+=(r.l[q]-z.l[q])*fac;n++;}}return n?dir*s/n:null;}
+function limits(){var D=cfgN('dia')||300;return {wl:12.5,wl2:Math.min(38,0.1*D),res:Math.min(D/120+4,12.5)};}
+function idx(c,p,t){for(var i=0;i<STG.length;i++){var s=STG[i];if(s.c===c&&s.p===p&&s.t===t)return i;}return -1;}
+function stageVals(i){var out=[];ROWS.forEach(function(w){if(w.i===i){var v=settle(R(w.k));if(v!=null)out.push(v);}});return out;}
+
+/* ---------- render jadual ---------- */
+function cell(k,field,q,ph,cls){var r=R(k),v='';if(r){if(field==='l')v=r.l[q];else v=r[field];}
+ return '<td><input'+(cls?' class="'+cls+'"':'')+' data-k="'+k+'" data-f="'+field+'"'+(q!=null?' data-q="'+q+'"':'')+' type="'+(cls==='w'?'text':'number')+'"'+(cls==='w'?'':' inputmode="decimal" step="any"')+' value="'+esc(v==null?'':v)+'"'+(ph?' placeholder="'+esc(ph)+'"':'')+' aria-label="'+field+(q!=null?(q+1):'')+' '+k+'"></td>';}
+function render(){buildRows();var h='<thead><tr><th class="tm">Masa</th><th>+min</th><th>PSI</th><th>Tan</th><th>L1</th><th>L2</th><th>L3</th><th>L4</th><th>Purata</th><th>Mendap</th><th>&Delta;</th><th>Pembaris</th><th>Catatan</th></tr></thead><tbody>';
+ STG.forEach(function(s,i){var t=tons(s),p=psiT(t);
+  h+='<tr class="sh"><td colspan="13"><div class="shi"><span class="sl">'+stName(s)+'</span><span class="si">'+f(t,1)+' t &middot; '+(p==null?'-':p)+' psi &middot; '+(s.d?s.d+' min':'')+'</span> <span class="si">mula</span> <input type="time" data-st="'+i+'" value="'+hm(s.st)+'" aria-label="Masa mula peringkat">'+(s.over?'<span class="ov">SEBENAR</span> <button class="btn sm ghost" type="button" data-act="resetSt" data-i="'+i+'">auto</button>':'')+'</div></td></tr>';
+  ROWS.forEach(function(w){if(w.i!==i)return;var r=R(w.k);
+   h+='<tr id="r'+w.k+'" data-row="'+w.k+'"><td class="tm">'+hm(w.t)+'<small>'+dm(w.t)+(r&&r.at?' &middot; ambil '+hm(r.at):'')+'</small></td><td class="mute">'+w.m+'</td>'+
+    cell(w.k,'psi',null,p==null?'':String(p))+'<td class="c" data-o="t"></td>'+
+    cell(w.k,'l',0)+cell(w.k,'l',1)+cell(w.k,'l',2)+cell(w.k,'l',3)+
+    '<td class="c" data-o="a"></td><td class="c set" data-o="s"></td><td class="c" data-o="d"></td>'+cell(w.k,'ru')+cell(w.k,'rm',null,'',"w")+'</tr>';});});
+ $('tbl').innerHTML=h+'</tbody>';
+ ROWS.forEach(function(w){calcRow(w.k);});
+ status();summary();$('pid').textContent=ST.cfg.pile||'';}
+function prevOf(k){var p=null;for(var j=0;j<ROWS.length;j++){if(ROWS[j].k===k)return p;if(has(R(ROWS[j].k)))p=ROWS[j].k;}return p;}
+function calcRow(k){var tr=$('r'+k);if(!tr)return;var r=R(k),w=null;for(var j=0;j<ROWS.length;j++)if(ROWS[j].k===k){w=ROWS[j];break;}
+ var s=STG[w.i],tt=(r&&r.psi!=null)?psiToT(r.psi):null;
+ tr.querySelector('[data-o="t"]').textContent=tt!=null?f(tt,1):'';
+ tr.querySelector('[data-o="a"]').textContent=f(avg(r),2);
+ var se=settle(r),sc=tr.querySelector('[data-o="s"]');sc.textContent=f(se,2);sc.className='c set'+(se!=null&&se<0?' neg':'');
+ var pk=prevOf(k),d=(pk&&se!=null)?se-settle(R(pk)):null;tr.querySelector('[data-o="d"]').textContent=d==null?'':((d>0?'+':'')+f(d,2));}
+
+/* ---------- status masa nyata ---------- */
+function status(){var now=Date.now(),nk=null,nt=null;
+ ROWS.forEach(function(w){var tr=$('r'+w.k);if(!tr)return;var d=has(R(w.k)),c='';
+  if(d)c='done';else if(w.t<now-60000)c='over';
+  if(!d&&w.t>=now-60000&&(nt==null||w.t<nt)){nt=w.t;nk=w.k;}
+  tr.className=c;});
+ if(nk){$('r'+nk).className='next';}
+ NEXTKEY=nk;
+ $('kNow').textContent=hm(now)+':'+pad(new Date(now).getSeconds());$('kDay').textContent=dm(now);
+ if(nk){var w=null;ROWS.forEach(function(x){if(x.k===nk)w=x;});var s=STG[w.i];
+  $('kNext').textContent=nt-now<=0?'SEKARANG':dur(nt-now);$('kNext').className=nt-now<=60000?'late':'';
+  $('kNextL').innerHTML=hm(nt)+' &middot; '+(s.t==='Z'?'sifar':s.p+'% C'+s.c)+' +'+w.m;}
+ else{$('kNext').textContent='SELESAI';$('kNextL').textContent='-';}}
+function summary(){var last=null;ROWS.forEach(function(w){if(has(R(w.k)))last=w;});
+ if(last){var s=STG[last.i],t=tons(s),r=R(last.k);$('kLoad').textContent=(r.psi!=null?f(psiToT(r.psi),1):f(t,1))+' t';$('kPsi').textContent=(r.psi!=null?r.psi+' psi':'sasaran '+psiT(t)+' psi');
+  var se=settle(r);$('kSet').textContent=se==null?'-':f(se,2)+' mm';$('kSetL').innerHTML=(s.t==='Z'?'sifar':s.p+'% C'+s.c)+' &middot; '+hm(last.t);}
+ else{$('kLoad').textContent='-';$('kPsi').textContent='-';$('kSet').textContent='-';$('kSetL').textContent='isi bacaan sifar dulu';}
+ var lm=limits(),a=stageVals(idx(1,100,'L')),b=stageVals(idx(1,0,'U')),c=stageVals(idx(2,200,'L')),e=stageVals(STG.length-1);
+ function mx(x){return x.length?Math.max.apply(null,x):null;}
+ function ls(x){return x.length?x[x.length-1]:null;}
+ var rows=[['Mendap @ 1.0 WL (C1 100%)',mx(a),lm.wl,a.length>=18],['Residual selepas C1',ls(b),lm.res,b.length>=7],['Mendap @ 2.0 WL (C2 200%)',mx(c),lm.wl2,c.length>=34],['Residual akhir',ls(e),null,e.length>=7]];
+ var h='<span class="h">Kriteria</span><span class="h">Ukur</span><span class="h">Had</span><span class="h">Status</span>';
+ rows.forEach(function(x){var v=x[1],st;if(v==null)st='<span class="chip na">Belum</span>';else if(x[2]==null)st='<span class="chip na">Rekod</span>';else if(v>x[2])st='<span class="chip bad">Gagal</span>';else st=x[3]?'<span class="chip ok">Lulus</span>':'<span class="chip wait">Sedang</span>';
+  h+='<span>'+x[0]+'</span><span>'+(v==null?'-':f(v,2))+'</span><span>'+(x[2]==null?'-':f(x[2],2))+'</span>'+st;});
+ $('res').innerHTML=h;}
+
+/* ---------- input ---------- */
+$('tbl').addEventListener('input',function(e){var el=e.target,k=el.getAttribute('data-k');if(!k)return;var fld=el.getAttribute('data-f');
+ var r=ST.rows[k]||(ST.rows[k]={l:[null,null,null,null],psi:null,ru:null,rm:''});
+ if(fld==='l')r.l[+el.getAttribute('data-q')]=num(el.value);else if(fld==='rm')r.rm=el.value;else r[fld]=num(el.value);
+ if(has(r)&&!r.at)r.at=Date.now();
+ save();
+ if(k==='0-0')ROWS.forEach(function(w){calcRow(w.k);});else{calcRow(k);var nx=null,found=false;ROWS.forEach(function(w){if(found&&!nx&&has(R(w.k)))nx=w.k;if(w.k===k)found=true;});if(nx)calcRow(nx);}
+ status();summary();});
+$('tbl').addEventListener('change',function(e){var el=e.target,i=el.getAttribute('data-st');if(i==null)return;i=+i;
+ var m=String(el.value).match(/(\d+):(\d+)/);if(!m)return;var base=STG[i].st,d=new Date(base);d.setHours(+m[1],+m[2],0,0);var t=d.getTime();
+ if(t-base>43200000)t-=86400000;if(base-t>43200000)t+=86400000;ST.ss[i]=t;save();render();});
+document.addEventListener('keydown',function(e){if(e.key!=='Enter')return;var el=e.target;if(!el.getAttribute||!el.getAttribute('data-k'))return;e.preventDefault();
+ var all=[].slice.call(document.querySelectorAll('#tbl input[data-k]')),i=all.indexOf(el);if(i>=0&&all[i+1])all[i+1].focus();});
+
+/* ---------- tetapan ---------- */
+function fillCfg(){['pile','wl','area','dia','fac','dir'].forEach(function(k){var el=document.querySelector('[data-c="'+k+'"]');el.value=ST.cfg[k]==null?'':ST.cfg[k];});$('cStart').value=toLocal(ST.cfg.start);}
+$('setPanel').addEventListener('change',function(e){var k=e.target.getAttribute('data-c');if(!k)return;
+ if(k==='start'){var t=fromLocal(e.target.value);if(t)ST.cfg.start=t;}else ST.cfg[k]=e.target.value;save();render();});
+
+/* ---------- modal ---------- */
+function modal(title,msg,txt,imp){$('mT').textContent=title;$('mMsg').textContent=msg;$('mTxt').value=txt;$('mTxt').readOnly=!imp;$('mImp').hidden=!imp;$('mCopy').textContent='Salin';$('modal').hidden=false;}
+$('mX').addEventListener('click',function(){$('modal').hidden=true;});
+$('mCopy').addEventListener('click',function(){var ta=$('mTxt');try{navigator.clipboard.writeText(ta.value).then(function(){$('mCopy').textContent='Disalin';},function(){ta.select();});}catch(e){ta.select();}});
+$('mImp').addEventListener('click',function(){try{var o=JSON.parse($('mTxt').value);if(!o||!o.cfg||!o.rows)throw 0;ST=o;if(!ST.ss)ST.ss={};save();fillCfg();render();$('modal').hidden=true;}catch(e){$('mMsg').textContent='Teks backup tak sah. Tampal semula teks penuh dari backup.';}});
+function csv(){var L=[['Pile',ST.cfg.pile].join(','),['WL t',ST.cfg.wl].join(','),'',['Tarikh','Masa','Masa ambil','Cycle','% WL','Tan sasaran','PSI','Tan dari PSI','L1','L2','L3','L4','Purata mm','Mendap mm','Pembaris','Catatan'].join(',')];
+ ROWS.forEach(function(w){var r=R(w.k),s=STG[w.i];if(!r)r={l:[null,null,null,null]};
+  L.push([dm(w.t),hm(w.t),r.at?hm(r.at):'',s.c,s.p,f(tons(s),1),r.psi==null?'':r.psi,r.psi==null?'':f(psiToT(r.psi),1)].concat(r.l.map(function(x){return x==null?'':x;})).concat([f(avg(r),3),f(settle(r),3),r.ru==null?'':r.ru,'"'+String(r.rm||'').replace(/"/g,'""')+'"']).join(','));});
+ return L.join('\n');}
+
+/* ---------- butang ---------- */
+document.addEventListener('click',function(e){var b=e.target.closest?e.target.closest('[data-act]'):null;if(!b)return;var a=b.getAttribute('data-act');
+ if(a==='goNext'){var el=NEXTKEY?$('r'+NEXTKEY):null;if(el){el.scrollIntoView({block:'center'});var inp=el.querySelector('input[data-f="l"]');if(inp)inp.focus({preventScroll:true});}}
+ if(a==='toggleSet'){$('setPanel').hidden=!$('setPanel').hidden;}
+ if(a==='resetSt'){delete ST.ss[+b.getAttribute('data-i')];save();render();}
+ if(a==='csv')modal('CSV','Salin dan tampal ke Google Sheets / Excel.',csv(),false);
+ if(a==='backup')modal('Backup / Import','Salin teks ini dan simpan (WhatsApp/Notes). Untuk pulihkan: padam teks, tampal backup, tekan Import.',JSON.stringify(ST),true);});
+
+load();buildStages();fillCfg();render();
+setInterval(status,1000);
+setTimeout(function(){var el=NEXTKEY?$('r'+NEXTKEY):null;if(el)el.scrollIntoView({block:'center'});},300);
+})();
+</script>
+
+</body>
+</html>
